@@ -1,0 +1,7 @@
+#dir
+bin/
+obj/
+
+#fil
+*.cbp
+*.layout
