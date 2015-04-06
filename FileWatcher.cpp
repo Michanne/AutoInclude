@@ -1,14 +1,14 @@
 #include "FileWatcher.h"
 
-#if defined(USING_WINDOWS)
-    #include <windows.h>
-#elif defined(USING_MACOSX)
-
-#endif // includes
-
-FileWatcher::FileWatcher()
+FileWatcher::FileWatcher(std::string directoryName)
+:
+    #ifdef USING_WINDOWS
+    FileWatcherBaseWindows(directoryName.c_str())
+    #endif //constructor
 {
 
+    print("Watching directory " + directoryName + "...\n",
+          {Colors::RED, Colors::GREEN});
 }
 
 FileWatcher::~FileWatcher()
@@ -16,17 +16,29 @@ FileWatcher::~FileWatcher()
 
 }
 
-const char* FileWatcher::generateMainHeader()
+void FileWatcher::close()
 {
+    platformWaitThread();
+}
 
-#if defined(USING_WINDOWS)
+void FileWatcher::wait()
+{
+    platformHoldForQuit();
+}
 
-#elif defined(USING_MACOSX)
+void FileWatcher::print(std::string text, std::initializer_list<Colors> colors)
+{
+    platformPrintColorS(text, colors);
+}
 
-#elif defined(USING_LINUX)
+void FileWatcher::print(const char* text, std::initializer_list<Colors> colors)
+{
+    platformPrintColorS(text, colors);
+}
 
-#endif // gen header
-
+std::string FileWatcher::getCurrentDirectory()
+{
+    return platformQueryDirectory();
 }
 
 

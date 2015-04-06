@@ -5,50 +5,34 @@
 #include "windows/FileWatcherWindows.h"
 #include <unordered_map>
 
-enum FileState
-{
-    REMOVED,
-    MODIFIED,
-    ADDED,
-    UNCHANGED
-};
-
-struct FileWatcherConfig
-{
-
-    const char*                                 currentlyWatchedDirectory;
-    std::unordered_map<const char*, FileState>  currentlyWatchedFiles;
-
-};
+#if _WIN32
+#define USING_WINDOWS
+#elif defined(__APPLE__) || defined(__MACH__)
+#define USING_MACOSX
+#elif __linux__
+#define USING_LINUX
+#endif // OS
 
 class FileWatcher
-    : public
+    :
     #if defined(USING_WINDOWS)
-        FileWatcherBaseWindows
+        public FileWatcherBaseWindows
     #elif defined(USING_MACOSX)
     #elif defined(USING_LINUX)
     #endif // defined
 {
 
-private:
-
-    FileWatcherConfig   config;
-
-    const char* generateMainHeader();
-    const char* generateHeaderFromURL();
-    const char* generateHeaderFromImplementation();
-
 public:
 
-    FileWatcher();
+    FileWatcher(std::string);
+    FileWatcher(){};
     ~FileWatcher();
 
-    void watchFile();
-    void watchHeader();
-    void autoInclude();
-    void traverseDirectory();
-
-    void setPollFrequency();
+    void close();
+    void wait();
+    void print(const char*, std::initializer_list<Colors>);
+    void print(std::string, std::initializer_list<Colors>);
+    std::string getCurrentDirectory();
 };
 
 #endif // H_FILE_WATCHER_H
