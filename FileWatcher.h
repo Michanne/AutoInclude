@@ -17,6 +17,7 @@
 enum Commands
 {
     INVALID,
+    HELP,
     SELECT,
     VIEW,
     PRINT_CURRENT_DIRECTORY,
@@ -43,8 +44,8 @@ private:
     {
         _p("cd", "<path-name> ; Switch to <path-name> directory")
         _p("cda", "<path-name-absolute> ; Switch to <path-name-absolute> directory")
-        _p("pwd", "")
-        _p("quit", "")
+        _p("pwd", "; Prints the file structure of the current directory")
+        _p("quit", "; Quits the program")
         _p("select", "<path-name> ; Selects <path-name> in current directory to watch")
         _p("rebase", "")
         _p("rebuild", "")
@@ -53,7 +54,7 @@ private:
     #define c(x) Command:x
     std::unordered_map<std::string, Commands> CommandNames =
     {
-        _p("cd", c(SELECT))
+        _p("cd", c(CHANGE_RELATIVE_DIRECTORY))
         _p("cda", c(CHANGE_ABSOLUTE_DIRECTORY))
         _p("pwd", c(PRINT_CURRENT_DIRECTORY))
         _p("quit", c(QUIT))

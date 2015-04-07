@@ -2,9 +2,11 @@
 #define USING_WINDOWS
 #include "FileWatcher.h"
 
-//Errors:
+//TODO:
 /**
-need to finish header generation and maybe add support for watching files too?
+need to finish header generation and maybe add support for watching assets too?
+watching works, although not as it should
+polling blocks main thread right now. We'll fix this when I add support for Rebuild and Rebase options
 **/
 
 FileWatcher* startup();

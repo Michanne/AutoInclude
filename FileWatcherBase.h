@@ -5,6 +5,7 @@
 #define DELETED             =delete
 #define IMPLEMENTED
 
+#define COLOR_OPTIONS   10
 #define FILE_HANDLE_STATES  5
 #define AUTO_INCLUDE_BASE_PATH  "autoinclude"
 
@@ -29,10 +30,12 @@ typedef enum FileWatcherColorBase
     GREEN,
     BLUE,
     INTENSE,
+    WHITE,
     B_RED,
     B_GREEN,
     B_BLUE,
-    B_INTENSE
+    B_INTENSE,
+    B_WHITE
 } Colors;
 
 enum FileHandleState
@@ -81,8 +84,8 @@ protected:
     #define _pair(x, y) {x, FileType::ft##y}
     std::unordered_map<std::string, FileType> FileExtensions =
     {
-        _pair("h", HEADER), _pair("hpp", HEADER), _pair("c", IMPLEMENTATION),
-        _pair("cpp", IMPLEMENTATION), _pair("tcc", IMPLEMENTATION), _pair("\0", FOLDER)
+        _pair(".h", HEADER), _pair(".hpp", HEADER), _pair(".c", IMPLEMENTATION),
+        _pair(".cpp", IMPLEMENTATION), _pair(".tcc", IMPLEMENTATION), _pair("\0", FOLDER)
     };
     #undef _pair
 

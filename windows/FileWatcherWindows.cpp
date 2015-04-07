@@ -189,6 +189,8 @@ FileType FileWatcherBaseWindows::platformFileType(std::string filename)
 /**
 Thank jesus christ for Jim Beveridge who was kind enough to write an enormously detailed 2-part guide on ReadDirectoryChangesW
 http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html
+
+I'll fix this function once I understand all these nuances. For now, this is incomplete
 **/
 void FileWatcherBaseWindows::watchDirectory()
 {

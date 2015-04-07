@@ -51,8 +51,6 @@ void FileWatcher::queryForDirectoryName()
     displayDirectoryTree(currentDirectory, true);
 }
 
-#define PRINT_USAGE(x) std::cout << "Usage: " << x << std::endl; return Commands::INVALID;
-
 Commands FileWatcher::parseCommand(std::string line)
 {
     std::vector<std::string> arguments;
@@ -76,6 +74,16 @@ Commands FileWatcher::parseCommand(std::string line)
             print("Usage [" + arg1 + "]:\t" + CommandUsages.at(arg1), {Colors::RED});
             std::cout << "\n";
             option = Commands::INVALID;
+        }
+    }
+
+    else if(arg1 == "help")
+    {
+        for(auto comm : CommandUsages)
+        {
+            print("Usage [" + comm.first + "]:\t" + comm.second, {Colors::WHITE});
+            std::cout << "\n";
+            option = Commands::HELP;
         }
     }
 
@@ -126,6 +134,12 @@ void FileWatcher::displayDirectoryTree(std::string directory, bool showTree)
 
     CASE(INVALID,
          std::cout << "Please enter a valid command" << std::endl;
+         displayDirectoryTree(currentDirectory, false););
+
+    CASE(PRINT_CURRENT_DIRECTORY,
+         displayDirectoryTree(currentDirectory, true););
+
+    CASE(HELP,
          displayDirectoryTree(currentDirectory, false););
 
     CASE(QUIT, closeProgram = true;);
