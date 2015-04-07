@@ -64,59 +64,27 @@ Commands FileWatcher::parseCommand(std::string line)
 
     std::string arg1 = arguments.at(0);
 
-    switch(line.c_str()[0])
+    if(CommandNames.find(arg1) != CommandNames.end())
     {
-    case 'c':
-        if(arg1 == "cd")
+        if(arguments.size() == CommandArgs.at(arg1))
         {
-
-            if(arguments.size() != 2)
-            {
-                PRINT_USAGE("cd <path-name> ; Switch to <path-name> directory");
-            }
-
-            currentArgument = arguments.at(1);
-            option = Commands::CHANGE_RELATIVE_DIRECTORY;
+            currentArguments = arguments;
+            option = CommandNames.at(arg1);
         }
-        if(arg1 == "cda")
+        else
         {
-
-            if(arguments.size() != 2)
-            {
-                PRINT_USAGE("cda <path-name-absolute> ; Switch to <path-name-absolute> directory");
-            }
-
-            currentArgument = arguments.at(1);
-            option = Commands::CHANGE_ABSOLUTE_DIRECTORY;
+            print("Usage [" + arg1 + "]:\t" + CommandUsages.at(arg1), {Colors::RED});
+            std::cout << "\n";
+            option = Commands::INVALID;
         }
-        break;
-    case 'q':
-        if(arg1 == "quit" ||
-           arg1 == "exit" ||
-           arg1 == "q")
-        {
-            currentArgument = "";
-            option = Commands::QUIT;
-        }
-        break;
-    case 's':
-        if(arg1 == "select")
-        {
+    }
 
-            if(arguments.size() != 2)
-            {
-                PRINT_USAGE("select <path-name> ; Selects <path-name> in current directory to watch");
-            }
-            currentArgument = arguments.at(1);
-            option = Commands::SELECT;
-        }
-        break;
-    default:
+    else
+    {
         print("'" + line + "' is an invalid command", {Colors::BLUE, Colors::GREEN});
         std::cout << std::endl;
         option = Commands::INVALID;
-        currentArgument = "invalid";
-        break;
+        currentArguments = arguments;
     }
 
     return option;
@@ -145,16 +113,16 @@ void FileWatcher::displayDirectoryTree(std::string directory, bool showTree)
     switch(command)
     {
     CASE(SELECT,
-         if(!platformDisplayDirectory(currentDirectory + "/" + currentArgument))
+         if(!platformDisplayDirectory(currentDirectory + "/" + currentArguments.at(1)))
             displayDirectoryTree(currentDirectory, true);
-         else currentDirectory += "/" + currentArgument;
+         else currentDirectory += "/" + currentArguments.at(1);
          );
 
     CASE(CHANGE_RELATIVE_DIRECTORY,
-         displayDirectoryTree(currentDirectory + "/" + currentArgument, true););
+         displayDirectoryTree(currentDirectory + "/" + currentArguments.at(1), true););
 
     CASE(CHANGE_ABSOLUTE_DIRECTORY,
-         displayDirectoryTree(currentArgument, true););
+         displayDirectoryTree(currentArguments.at(1), true););
 
     CASE(INVALID,
          std::cout << "Please enter a valid command" << std::endl;

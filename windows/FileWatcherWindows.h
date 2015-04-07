@@ -11,7 +11,7 @@
 #include <windows.h>
 
 #define COLOR_OPTIONS   8
-#define _MAX_PATH       256
+#define _MAX_PATH       1000
 #define BASE_PATH "C:"
 
 using boost::locale::conv::utf_to_utf;
@@ -56,11 +56,6 @@ public:
     void setWatchedDirectory(std::string);
     void watchDirectory();
 
-    void watchFile(std::string);
-    void watchHeader(std::string);
-    void autoInclude();
-    void traverseDirectory();
-
     void platformWaitThread();
     void platformPrintColorC(const char*, std::initializer_list<Colors>);
     void platformPrintColorS(std::string, std::initializer_list<Colors>);
@@ -69,13 +64,15 @@ public:
     void platformBeginDirectoryWatch();
     FileType platformFileType(std::string);
     void platformThreadedWait(unsigned);
+    void platformReadyAIDirectory();
 
     void platformSetCurrentDirectory(std::string);
 
-    void generateShorthandList();
-    void openShorthandList();
+    void platformOpenShorthandList();
+    void platformGenerateHeaderFile();
+
     void parseShorthandList();
-    void generateHeaderFile();
+    void generateShorthandList();
 
     void pollWatcherThread();
 

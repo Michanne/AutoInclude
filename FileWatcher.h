@@ -22,6 +22,8 @@ enum Commands
     PRINT_CURRENT_DIRECTORY,
     CHANGE_ABSOLUTE_DIRECTORY,
     CHANGE_RELATIVE_DIRECTORY,
+    REBASE,
+    REBUILD,
     QUIT
 };
 
@@ -34,8 +36,46 @@ class FileWatcher
     #elif defined(USING_LINUX)
     #endif // defined
 {
+private:
 
-    std::string currentArgument;
+    #define _p(x, y) {x, y},
+    std::unordered_map<std::string, std::string> CommandUsages =
+    {
+        _p("cd", "<path-name> ; Switch to <path-name> directory")
+        _p("cda", "<path-name-absolute> ; Switch to <path-name-absolute> directory")
+        _p("pwd", "")
+        _p("quit", "")
+        _p("select", "<path-name> ; Selects <path-name> in current directory to watch")
+        _p("rebase", "")
+        _p("rebuild", "")
+    };
+
+    #define c(x) Command:x
+    std::unordered_map<std::string, Commands> CommandNames =
+    {
+        _p("cd", c(SELECT))
+        _p("cda", c(CHANGE_ABSOLUTE_DIRECTORY))
+        _p("pwd", c(PRINT_CURRENT_DIRECTORY))
+        _p("quit", c(QUIT))
+        _p("select", c(SELECT))
+        _p("rebase", c(REBASE))
+        _p("rebuild", c(REBUILD))
+    };
+    #undef c
+
+    std::unordered_map<std::string, unsigned> CommandArgs =
+    {
+        _p("cd", 2)
+        _p("cda", 2)
+        _p("pwd", 1)
+        _p("quit", 1)
+        _p("select", 2)
+        _p("rebase", 3)
+        _p("rebuild", 1)
+    };
+    #undef _p
+
+    std::vector<std::string> currentArguments;
     std::string currentDirectory;
     unsigned pollingFrequency;
     static unsigned long long lastUpdatedTime;

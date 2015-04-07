@@ -49,10 +49,13 @@ void run(FileWatcher* fw)
     fw->print("Hello World\n", {Colors::RED});
     fw->queryForDirectoryName();
     fw->setPollingRateMilliseconds(5000);
-    while(!fw->closeProgram)
+    if(!fw->closeProgram)
     {
         fw->setWatchedDirectory(fw->getCurrentSetDirectory());
         fw->platformBeginDirectoryWatch();
+    }
+    while(!fw->closeProgram)
+    {
         fw->poll();
     }
 }

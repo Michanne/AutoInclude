@@ -32,26 +32,6 @@ DWORD WINAPI FileWatcherBaseWindows::watchDirectoryEntryPoint(LPVOID lpParam)
     static_cast<FileWatcherBase*>(lpParam)->watchDirectory();
 }
 
-void FileWatcherBaseWindows::watchFile(std::string filename)
-{
-
-}
-
-void FileWatcherBaseWindows::watchHeader(std::string filename)
-{
-
-}
-
-void FileWatcherBaseWindows::autoInclude()
-{
-
-}
-
-void FileWatcherBaseWindows::traverseDirectory()
-{
-
-}
-
 void FileWatcherBaseWindows::platformWaitThread()
 {
 
@@ -94,19 +74,17 @@ std::string FileWatcherBaseWindows::platformQueryDirectory()
 bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
 {
 
-    //get the wide-character file-path
-    WCHAR wDirectoryName[_MAX_PATH];
     char fileName[_MAX_PATH];
-    MultiByteToWideChar(CP_UTF8, 0, directory.c_str(), _MAX_PATH, wDirectoryName, _MAX_PATH);
 
+    //get the wide-character file-path using utf8_to_wstring
     WIN32_FIND_DATA fdFileData;
-    HANDLE hFile = FindFirstFile(wDirectoryName, &fdFileData);
+    HANDLE hFile = FindFirstFile(utf8_to_wstring(directory).c_str(), &fdFileData);
 
     //check if handle is ok
     if(hFile == INVALID_HANDLE_VALUE)
     {
 
-        log("Warning: Directory could not be displayed:" + directory, _MAX_PATH);
+        log(AUTO_INCLUDE_WARN_DIR_FAIL_DISPLAY(directory), _MAX_PATH);
         platformPrintColorS(directory + " could not be displayed properly", {Colors::RED, Colors::INTENSE, Colors::B_RED});
         std::cout << std::endl;
         return false;
@@ -140,13 +118,10 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
             }
 
             std::cout << std::endl;
-
         }while(FindNextFile(hFile, &fdFileData));
-
         FindClose(hFile);
-
-        return true;
     }
+    return true;
 }
 
 void FileWatcherBaseWindows::platformBeginDirectoryWatch()
@@ -192,7 +167,7 @@ void FileWatcherBaseWindows::platformBeginDirectoryWatch()
     {
 
         //create log file and log the error, close program
-        log("Worker thread could not be spawned. Exiting with error code 1", 100);
+        log(AUTO_INCLUDE_ERROR_THREAD_FAIL_SPAWN, 100);
         ExitProcess(EXIT_FAILURE);
     }
 }
@@ -210,6 +185,11 @@ FileType FileWatcherBaseWindows::platformFileType(std::string filename)
     else return FileType::ftFILE;
 }
 
+
+/**
+Thank jesus christ for Jim Beveridge who was kind enough to write an enormously detailed 2-part guide on ReadDirectoryChangesW
+http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html
+**/
 void FileWatcherBaseWindows::watchDirectory()
 {
 
@@ -219,7 +199,7 @@ void FileWatcherBaseWindows::watchDirectory()
 
     if(M_hDirectoryStatus == INVALID_HANDLE_VALUE)
     {
-        log("Unable to create watchpoint in directory '" + M_config.currentlyWatchedDirectory + "'", 200);
+        log(AUTO_INCLUDE_ERROR_WATCHPOINT_FAIL_SPAWN(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
         ExitProcess(EXIT_FAILURE);
     }
 
@@ -235,7 +215,7 @@ void FileWatcherBaseWindows::watchDirectory()
         //if a change has been found, set the active boolean and dump the information to a FindData struct
         DWORD dwStatus = WaitForSingleObject(M_hDirectoryStatus, INFINITE);
 
-        PFILE_NOTIFY_INFORMATION pInfo;
+        FILE_NOTIFY_INFORMATION fniInfo;
 
         switch(dwStatus)
         {
@@ -244,19 +224,26 @@ void FileWatcherBaseWindows::watchDirectory()
             //A file has been modified, we take appropriate measures
             if(ReadDirectoryChangesW(
                                      M_hDirectoryStatus,
-                                     pInfo,
-                                     sizeof(FILE_NOTIFY_INFORMATION),
+                                     (LPVOID)&fniInfo,
+                                     sizeof(fniInfo),
                                      true,
-                                     FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME,
+                                     FILE_NOTIFY_CHANGE_FILE_NAME |
+                                     FILE_NOTIFY_CHANGE_DIR_NAME  |
+                                     FILE_NOTIFY_CHANGE_CREATION,
                                      0,
                                      NULL,
                                      NULL
                                      ))
             {
-                switch(pInfo->Action)
+                std::cout << "check";
+                std::cout << ": " << wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength) << std::endl;
+                switch(fniInfo.Action)
                 {
                 case FILE_ACTION_ADDED:
-                    handleFileState(FileHandleState::ADDED, wstring_to_utf8(pInfo->FileName, pInfo->FileNameLength));
+                    handleFileState(FileHandleState::ADDED, wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength));
+                    break;
+                case FILE_ACTION_REMOVED:
+                    handleFileState(FileHandleState::REMOVED, wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength));
                     break;
                 default:
                     break;
@@ -264,19 +251,19 @@ void FileWatcherBaseWindows::watchDirectory()
             }
             break;
         default:
-            log("Notification handle was invalid", 20);
+            log(AUTO_INCLUDE_ERROR_NOTIFY_INVALID, 20);
             ExitProcess(EXIT_FAILURE);
             break;
         }
 
         if(!FindNextChangeNotification(M_hDirectoryStatus))
         {
-            log("Warning: Unable to request additional change notification; Attempt #" + attempts, 30);
+            log(AUTO_INCLUDE_WARN_NOTIFY_UPDATE_FAIL(attempts), 30);
             ++attempts;
 
             if(attempts >=3)
             {
-                log("Unable to request change in directory '" + M_config.currentlyWatchedDirectory + "'", _MAX_PATH);
+                log(AUTO_INCLUDE_ERROR_NOTIFY_FAIL(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
                 ExitProcess(EXIT_FAILURE);
             }
         }
@@ -285,22 +272,23 @@ void FileWatcherBaseWindows::watchDirectory()
 
 }
 
+
+void FileWatcherBaseWindows::platformGenerateHeaderFile()
+{
+
+}
+
+void FileWatcherBaseWindows::platformOpenShorthandList()
+{
+
+}
+
 void FileWatcherBaseWindows::generateShorthandList()
 {
 
 }
 
-void FileWatcherBaseWindows::openShorthandList()
-{
-
-}
-
 void FileWatcherBaseWindows::parseShorthandList()
-{
-
-}
-
-void FileWatcherBaseWindows::generateHeaderFile()
 {
 
 }
@@ -333,6 +321,31 @@ bool FileWatcherBaseWindows::log(const char* text, unsigned bufferSize)
     out_file.close();
 
     return true;
+}
+
+void FileWatcherBaseWindows::platformReadyAIDirectory()
+{
+
+    DWORD dwAttrib = GetFileAttributes(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH).c_str());
+
+    //check if directory exists, if it doesn't, create it
+    if(dwAttrib == INVALID_FILE_ATTRIBUTES ||
+       ~(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        BOOL success = CreateDirectory(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH).c_str(), NULL);
+        switch(success)
+        {
+        case ERROR_ALREADY_EXISTS:
+            log(AUTO_INCLUDE_WARN_AI_DIR_EXIST(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH), _MAX_PATH + 20);
+            break;
+        case ERROR_PATH_NOT_FOUND:
+            break;
+        default:
+            return;
+        }
+    }
+
+    else return;
 }
 
 void FileWatcherBaseWindows::platformThreadedWait(unsigned milliseconds)

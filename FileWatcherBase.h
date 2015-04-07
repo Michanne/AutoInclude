@@ -2,7 +2,20 @@
 #define H_FILE_WATCHER_BASE_H
 
 #define PURE_VIRTUAL        =0
+#define DELETED             =delete
+#define IMPLEMENTED
+
 #define FILE_HANDLE_STATES  5
+#define AUTO_INCLUDE_BASE_PATH  "autoinclude"
+
+#define AUTO_INCLUDE_ERROR_THREAD_FAIL_SPAWN                        "Worker thread could not be spawned"
+#define AUTO_INCLUDE_ERROR_WATCHPOINT_FAIL_SPAWN(directory)         "Unable to create watchpoint in directory '" + directory + "'"
+#define AUTO_INCLUDE_ERROR_NOTIFY_INVALID                           "Notification handle was invalid"
+#define AUTO_INCLUDE_ERROR_NOTIFY_FAIL(directory)                   "Unable to request change in directory '" + directory + "'"
+
+#define AUTO_INCLUDE_WARN_NOTIFY_UPDATE_FAIL(attempts)              "Unable to request additional change notification: Attempt #" + attempts
+#define AUTO_INCLUDE_WARN_AI_DIR_EXIST(directory)                   "The auto-include directory has already been created at '" + directory + "'"
+#define AUTO_INCLUDE_WARN_DIR_FAIL_DISPLAY(directory)               "'" + directory + "' was unable to be displayed"
 
 #include <fstream>
 #include <iostream>
@@ -76,64 +89,44 @@ protected:
     std::unordered_map<std::string, std::string> FileShortHandNames;
 
     static bool fileChanged;
-    bool go;
 
 public:
     FileWatcherBase(){};
+    FileWatcherBase(FileWatcherBase& rhs)                                           DELETED;
     virtual ~FileWatcherBase(){};
 
-    virtual void setWatchedDirectory(std::string)   PURE_VIRTUAL;
+    virtual void setWatchedDirectory(std::string)                                   PURE_VIRTUAL;
 
-    virtual void watchDirectory()                   PURE_VIRTUAL;
+    virtual void watchDirectory()                                                   PURE_VIRTUAL;
 
-    virtual void watchFile(std::string)             PURE_VIRTUAL;
-    virtual void watchHeader(std::string)           PURE_VIRTUAL;
-    virtual void autoInclude()                      PURE_VIRTUAL;
-    virtual void traverseDirectory()                PURE_VIRTUAL;
-
-    virtual void platformWaitThread()               PURE_VIRTUAL;
+    virtual void platformWaitThread()                                               PURE_VIRTUAL;
     virtual void platformPrintColorC(const char*, std::initializer_list<Colors>)    PURE_VIRTUAL;
     virtual void platformPrintColorS(std::string, std::initializer_list<Colors>)    PURE_VIRTUAL;
-    virtual std::string platformQueryDirectory()    PURE_VIRTUAL;
+    virtual std::string platformQueryDirectory()                                    PURE_VIRTUAL;
     virtual bool platformDisplayDirectory(std::string)                              PURE_VIRTUAL;
-    virtual FileType platformFileType(std::string)  PURE_VIRTUAL;
-    virtual void platformBeginDirectoryWatch()      PURE_VIRTUAL;
+    virtual FileType platformFileType(std::string)                                  PURE_VIRTUAL;
+    virtual void platformBeginDirectoryWatch()                                      PURE_VIRTUAL;
+    virtual void platformReadyAIDirectory()                                         PURE_VIRTUAL;
+    virtual void platformGenerateHeaderFile()                                       PURE_VIRTUAL;
+    virtual void platformOpenShorthandList()                                        PURE_VIRTUAL;
 
-    virtual void generateShorthandList()            PURE_VIRTUAL;
-    virtual void openShorthandList()                PURE_VIRTUAL;
-    virtual void parseShorthandList()               PURE_VIRTUAL;
-    virtual void generateHeaderFile()               PURE_VIRTUAL;
+    virtual void generateShorthandList()                                            PURE_VIRTUAL;
+    virtual void parseShorthandList()                                               PURE_VIRTUAL;
 
-    virtual void pollWatcherThread()                PURE_VIRTUAL;
+    virtual void pollWatcherThread()                                                PURE_VIRTUAL;
 
-    virtual void platformThreadedWait(unsigned)     PURE_VIRTUAL;
+    virtual void platformThreadedWait(unsigned)                                     PURE_VIRTUAL;
+
+    void watchFile(std::string)                                                     IMPLEMENTED;
+    void watchHeader(std::string)                                                   IMPLEMENTED;
+    void autoInclude()                                                              IMPLEMENTED;
+    void traverseDirectory()                                                        IMPLEMENTED;
+
+    std::string queryForShorthandName(std::string originalFilename)                 IMPLEMENTED;
+    void handleFileState(FileHandleState fhs, std::string filename)                 IMPLEMENTED;
 
     bool log(const char*, unsigned);
 
-    std::string queryForShorthandName(std::string originalFilename)
-    {
-        std::string temp;
-        platformPrintColorS("What name would you like to give to '" + originalFilename + "'?", {Colors::BLUE, Colors::GREEN, Colors::B_BLUE, Colors::B_INTENSE});
-        std::cout << std::endl;
-        std::getline(std::cin, temp);
-        return temp;
-    }
-
-    void handleFileState(FileHandleState fhs, std::string filename)
-    {
-        char* yesno;
-
-        switch(fhs)
-        {
-        case FileHandleState::ADDED:
-            platformPrintColorS(filename + " was created in the directory. Would you like to add the file to this autoinclude project?",
-                                {Colors::GREEN});
-            std::cin.get(yesno, 1);
-            if(yesno[0] == 'y')
-                queryForShorthandName(filename);
-                break;
-        }
-    }
 };
 
 #endif // H_FILE_WATCHER_BASE_H
