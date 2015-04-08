@@ -160,14 +160,6 @@ public:
 
     void removeEvent(WatchEventHandle)                                              IMPLEMENTED;
 
-    void watchFile(std::string)                                                     IMPLEMENTED;
-    void watchHeader(std::string)                                                   IMPLEMENTED;
-    void autoInclude()                                                              IMPLEMENTED;
-    void traverseDirectory()                                                        IMPLEMENTED;
-
-    std::string queryForShorthandName(std::string originalFilename)                 IMPLEMENTED;
-    void handleFileState(FileHandleState fhs, std::string filename)                 IMPLEMENTED;
-
     bool log(const char*, unsigned);
 
 };
