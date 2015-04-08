@@ -32,7 +32,7 @@ DWORD WINAPI FileWatcherBaseWindows::watchDirectoryEntryPoint(LPVOID lpParam)
     static_cast<FileWatcherBase*>(lpParam)->watchDirectory();
 }
 
-void FileWatcherBaseWindows::platformWaitThread()
+void FileWatcherBaseWindows::platformCloseThread()
 {
 
     M_threadDead = true;
@@ -84,8 +84,8 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
     if(hFile == INVALID_HANDLE_VALUE)
     {
 
-        log(AUTO_INCLUDE_WARN_DIR_FAIL_DISPLAY(directory), _MAX_PATH);
-        platformPrintColorS(directory + " could not be displayed properly", {Colors::RED, Colors::INTENSE, Colors::B_RED});
+        log(FILE_WATCHER_WARN_DIR_FAIL_DISPLAY(directory), _MAX_PATH);
+        platformPrintColorS(directory + " could not be displayed properly", FILE_WATCHER_COLOR_DIR_FAIL_DISPLAY);
         std::cout << std::endl;
         return false;
     }
@@ -101,19 +101,16 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
             switch(platformFileType(fileName))
             {
             case FileType::ftHEADER:
-                platformPrintColorC(fileName, {Colors::BLUE, Colors::GREEN});
+                platformPrintColorC(fileName, FILE_WATCHER_COLOR_FILE_HEADER);
                 break;
             case FileType::ftFILE:
-                platformPrintColorC(fileName, {Colors::RED, Colors::BLUE});
+                platformPrintColorC(fileName, FILE_WATCHER_COLOR_FILE_FILE);
                 break;
             case FileType::ftFOLDER:
-                platformPrintColorC(fileName, {Colors::BLUE});
+                platformPrintColorC(fileName, FILE_WATCHER_COLOR_FILE_FOLDER);
                 break;
             case FileType::ftIMPLEMENTATION:
-                platformPrintColorC(fileName, {Colors::GREEN});
-                break;
-            default:
-                platformPrintColorC(fileName, {Colors::RED, Colors::GREEN});
+                platformPrintColorC(fileName, FILE_WATCHER_COLOR_FILE_IMPLEMENTATION);
                 break;
             }
 
@@ -167,7 +164,7 @@ void FileWatcherBaseWindows::platformBeginDirectoryWatch()
     {
 
         //create log file and log the error, close program
-        log(AUTO_INCLUDE_ERROR_THREAD_FAIL_SPAWN, 100);
+        log(FILE_WATCHER_ERROR_THREAD_FAIL_SPAWN, 100);
         ExitProcess(EXIT_FAILURE);
     }
 }
@@ -195,13 +192,13 @@ I'll fix this function once I understand all these nuances. For now, this is inc
 void FileWatcherBaseWindows::watchDirectory()
 {
 
-    platformPrintColorS("Currently watching '" + M_config.currentlyWatchedDirectory + "'...", {Colors::BLUE, Colors::GREEN});
+    platformPrintColorS("Currently watching '" + M_config.currentlyWatchedDirectory + "'...", FILE_WATCHER_COLOR_DIR_WATCH);
 
     static unsigned attempts = 0;
 
     if(M_hDirectoryStatus == INVALID_HANDLE_VALUE)
     {
-        log(AUTO_INCLUDE_ERROR_WATCHPOINT_FAIL_SPAWN(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
+        log(FILE_WATCHER_ERROR_WATCHPOINT_FAIL_SPAWN(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
         ExitProcess(EXIT_FAILURE);
     }
 
@@ -253,45 +250,24 @@ void FileWatcherBaseWindows::watchDirectory()
             }
             break;
         default:
-            log(AUTO_INCLUDE_ERROR_NOTIFY_INVALID, 20);
+            log(FILE_WATCHER_ERROR_NOTIFY_INVALID, 20);
             ExitProcess(EXIT_FAILURE);
             break;
         }
 
         if(!FindNextChangeNotification(M_hDirectoryStatus))
         {
-            log(AUTO_INCLUDE_WARN_NOTIFY_UPDATE_FAIL(attempts), 30);
+            log(FILE_WATCHER_WARN_NOTIFY_UPDATE_FAIL(attempts), 30);
             ++attempts;
 
             if(attempts >=3)
             {
-                log(AUTO_INCLUDE_ERROR_NOTIFY_FAIL(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
+                log(FILE_WATCHER_ERROR_NOTIFY_FAIL(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
                 ExitProcess(EXIT_FAILURE);
             }
         }
 
     }while(!M_threadDead);
-
-}
-
-
-void FileWatcherBaseWindows::platformGenerateHeaderFile()
-{
-
-}
-
-void FileWatcherBaseWindows::platformOpenShorthandList()
-{
-
-}
-
-void FileWatcherBaseWindows::generateShorthandList()
-{
-
-}
-
-void FileWatcherBaseWindows::parseShorthandList()
-{
 
 }
 
@@ -325,20 +301,20 @@ bool FileWatcherBaseWindows::log(const char* text, unsigned bufferSize)
     return true;
 }
 
-void FileWatcherBaseWindows::platformReadyAIDirectory()
+void FileWatcherBaseWindows::platformCreateDirectory(std::string dirName)
 {
 
-    DWORD dwAttrib = GetFileAttributes(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH).c_str());
+    DWORD dwAttrib = GetFileAttributes(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + dirName).c_str());
 
     //check if directory exists, if it doesn't, create it
     if(dwAttrib == INVALID_FILE_ATTRIBUTES ||
        ~(dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
     {
-        BOOL success = CreateDirectory(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH).c_str(), NULL);
+        BOOL success = CreateDirectory(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + dirName).c_str(), NULL);
         switch(success)
         {
         case ERROR_ALREADY_EXISTS:
-            log(AUTO_INCLUDE_WARN_AI_DIR_EXIST(M_config.currentlyWatchedDirectory + "/" + AUTO_INCLUDE_BASE_PATH), _MAX_PATH + 20);
+            log(FILE_WATCHER_WARN_DIR_EXIST(M_config.currentlyWatchedDirectory + "/" + dirName), _MAX_PATH + 20);
             break;
         case ERROR_PATH_NOT_FOUND:
             break;

@@ -1,161 +1,62 @@
 #include "FileWatcher.h"
 
-unsigned long long FileWatcher::lastUpdatedTime;
-
-FileWatcher::FileWatcher(std::string directoryName)
-:
-    #ifdef USING_WINDOWS
-    FileWatcherBaseWindows(directoryName.c_str())
-    #endif //constructor
+namespace FileWatcher
 {
 
-    print("Watching directory " + directoryName + "...\n",
-          {Colors::RED, Colors::GREEN});
-
-    lastUpdatedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+FileWatcher::FileWatcher()
+{
+    baseInstance = new WatchInstance();
 }
 
 FileWatcher::~FileWatcher()
 {
-
+    delete baseInstance;
 }
 
-void FileWatcher::close()
+bool FileWatcher::displayDirectoryTree(std::string directory)
 {
-    platformWaitThread();
+    if(directory.c_str()[directory.length()-1] == '/')
+        return baseInstance->platformDisplayDirectory(directory);
+    else return baseInstance->platformDisplayDirectory(directory + "/*");
 }
 
 void FileWatcher::print(std::string text, std::initializer_list<Colors> colors)
 {
-    platformPrintColorS(text, colors);
+    baseInstance->platformPrintColorS(text, colors);
 }
 
-void FileWatcher::print(const char* text, std::initializer_list<Colors> colors)
+WatchInstanceHandle FileWatcher::addNewWatchInstance(std::string directory)
 {
-    platformPrintColorS(text, colors);
-}
-
-std::string FileWatcher::getCurrentWatchedDirectory()
-{
-    return platformQueryDirectory();
-}
-
-std::string FileWatcher::getCurrentSetDirectory()
-{
-    return currentDirectory;
-}
-
-void FileWatcher::queryForDirectoryName()
-{
-    currentDirectory = BASE_PATH;
-    displayDirectoryTree(currentDirectory, true);
-}
-
-Commands FileWatcher::parseCommand(std::string line)
-{
-    std::vector<std::string> arguments;
-    std::istringstream line_ss(line);
-    std::string token;
-    Commands option;
-
-    while(line_ss >> token) arguments.push_back(token);
-
-    std::string arg1 = arguments.at(0);
-
-    if(CommandNames.find(arg1) != CommandNames.end())
+    WatchInstanceHandle k = allocInstance.getHandle();
+    if(k != NULL_HANDLE)
     {
-        if(arguments.size() == CommandArgs.at(arg1))
-        {
-            currentArguments = arguments;
-            option = CommandNames.at(arg1);
-        }
-        else
-        {
-            print("Usage [" + arg1 + "]:\t" + CommandUsages.at(arg1), {Colors::RED});
-            std::cout << "\n";
-            option = Commands::INVALID;
-        }
+
+        WatchInstance* instance = new WatchInstance(directory);
+        instance->platformBeginDirectoryWatch();
+        directoryNames.insert(std::make_pair(k, instance));
     }
-
-    else if(arg1 == "help")
-    {
-        for(auto comm : CommandUsages)
-        {
-            print("Usage [" + comm.first + "]:\t" + comm.second, {Colors::WHITE});
-            std::cout << "\n";
-            option = Commands::HELP;
-        }
-    }
-
-    else
-    {
-        print("'" + line + "' is an invalid command", {Colors::BLUE, Colors::GREEN});
-        std::cout << std::endl;
-        option = Commands::INVALID;
-        currentArguments = arguments;
-    }
-
-    return option;
+    return k;
 }
 
-#define CASE(x, y) case x: y break;
+void FileWatcher::stopWatchInstance(WatchInstanceHandle handle)
+{
+    directoryNames.at(handle)->platformCloseThread();
+    delete directoryNames.at(handle);
+    directoryNames.erase(handle);
+    allocInstance.remove(handle);
+}
 
-void FileWatcher::displayDirectoryTree(std::string directory, bool showTree)
+void FileWatcher::removeWatchEvent(WatchInstanceHandle dirHandle, WatchEventHandle eventHandle)
 {
 
-    //display the tree
-    if(showTree)
-        if(platformDisplayDirectory(directory + "/*"))
-        {
-            std::cout << "Select the directory using the directory tree above\nAlternatively, type the absolute path of the directory\n"
-                         "Type 'help' for help:"<< std::endl;
-            currentDirectory = directory;
-        }
-
-    //wait for the user to enter a command
-    std::string commandLine;
-    std::cout << currentDirectory << "> ";
-    std::getline(std::cin, commandLine);
-    Commands command = parseCommand(commandLine);
-
-    switch(command)
+    if(directoryNames.find(dirHandle) != directoryNames.end())
     {
-    CASE(SELECT,
-         if(!platformDisplayDirectory(currentDirectory + "/" + currentArguments.at(1)))
-            displayDirectoryTree(currentDirectory, true);
-         else currentDirectory += "/" + currentArguments.at(1);
-         );
-
-    CASE(CHANGE_RELATIVE_DIRECTORY,
-         displayDirectoryTree(currentDirectory + "/" + currentArguments.at(1), true););
-
-    CASE(CHANGE_ABSOLUTE_DIRECTORY,
-         displayDirectoryTree(currentArguments.at(1), true););
-
-    CASE(INVALID,
-         std::cout << "Please enter a valid command" << std::endl;
-         displayDirectoryTree(currentDirectory, false););
-
-    CASE(PRINT_CURRENT_DIRECTORY,
-         displayDirectoryTree(currentDirectory, true););
-
-    CASE(HELP,
-         displayDirectoryTree(currentDirectory, false););
-
-    CASE(QUIT, closeProgram = true;);
+        directoryNames.at(dirHandle)->removeEvent(eventHandle);
     }
 }
 
-#undef CASE
-
-void FileWatcher::setPollingRateMilliseconds(unsigned pollRate)
+void FileWatcher::wait(unsigned milliseconds = 0)
 {
-    pollingFrequency = pollRate;
+    baseInstance->platformThreadedWait(milliseconds);
 }
-
-void FileWatcher::poll()
-{
-
-    platformThreadedWait(pollingFrequency);
-    pollWatcherThread();
 }

@@ -1,6 +1,6 @@
 #include <iostream>
 #define USING_WINDOWS
-#include "FileWatcher.h"
+#include "AutoInclude.h"
 
 //TODO:
 /**
@@ -9,55 +9,49 @@ watching works, although not as it should
 polling blocks main thread right now. We'll fix this when I add support for Rebuild and Rebase options
 **/
 
-FileWatcher* startup();
-void shutdown(FileWatcher*);
-void run(FileWatcher*);
+AutoInclude* startup();
+void shutdown(AutoInclude*);
+void run(AutoInclude*);
 
-FileWatcher* watcher;
+AutoInclude* application;
 
 int main(int argc, char** argv)
 {
-/*
-    if(argc == 1)
-    {
-        watcher = new FileWatcher(argv[0]);
-    }*/
+    application = startup();
 
-    watcher = startup();
+    run(application);
 
-    run(watcher);
-
-    shutdown(watcher);
+    shutdown(application);
     return 0;
 }
 
-FileWatcher* startup()
+AutoInclude* startup()
 {
 
-    FileWatcher* fw = new FileWatcher();
-    return fw;
+    AutoInclude* ai = new AutoInclude();
+    return ai;
 }
 
-void shutdown(FileWatcher* fw)
+void shutdown(AutoInclude* ai)
 {
 
-    fw->close();
-    delete fw;
+    ai->close();
+    delete ai;
 }
 
-void run(FileWatcher* fw)
+void run(AutoInclude* ai)
 {
 
-    fw->print("Hello World\n", {Colors::RED});
-    fw->queryForDirectoryName();
-    fw->setPollingRateMilliseconds(5000);
-    if(!fw->closeProgram)
+    ai->print("Hello World\n", {Colors::RED});
+    ai->queryForDirectoryName();
+    ai->setPollingRateMilliseconds(5000);
+    if(!ai->closeProgram)
     {
-        fw->setWatchedDirectory(fw->getCurrentSetDirectory());
-        fw->platformBeginDirectoryWatch();
+        ai->setWatchedDirectory(fw->getCurrentSetDirectory());
+        ai->platformBeginDirectoryWatch();
     }
     while(!fw->closeProgram)
     {
-        fw->poll();
+        ai->poll();
     }
 }

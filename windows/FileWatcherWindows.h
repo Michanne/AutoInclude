@@ -15,12 +15,12 @@
 
 using boost::locale::conv::utf_to_utf;
 
-class FileWatcherBaseWindows : public FileWatcherBase
+class WatchInstance : public FileWatcherBase
 {
 
 private:
 
-    static FileWatcherBaseWindows* instance;
+    static WatchInstance* instance;
 
     WORD wTerminalColors[COLOR_OPTIONS] =
     {
@@ -48,14 +48,14 @@ private:
 
 public:
 
-    FileWatcherBaseWindows(std::string);
-    FileWatcherBaseWindows();
-    ~FileWatcherBaseWindows();
+    WatchInstance(std::string);
+    WatchInstance();
+    ~WatchInstance();
 
     void setWatchedDirectory(std::string);
     void watchDirectory();
 
-    void platformWaitThread();
+    void platformCloseThread();
     void platformPrintColorC(const char*, std::initializer_list<Colors>);
     void platformPrintColorS(std::string, std::initializer_list<Colors>);
     std::string platformQueryDirectory();
@@ -63,15 +63,9 @@ public:
     void platformBeginDirectoryWatch();
     FileType platformFileType(std::string);
     void platformThreadedWait(unsigned);
-    void platformReadyAIDirectory();
-
     void platformSetCurrentDirectory(std::string);
 
-    void platformOpenShorthandList();
-    void platformGenerateHeaderFile();
-
-    void parseShorthandList();
-    void generateShorthandList();
+    void platformCreateDirectory(std::string);
 
     void pollWatcherThread();
 
