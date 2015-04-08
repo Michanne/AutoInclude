@@ -11,3 +11,5 @@ them when it comes to programming. Thus I've created this project to mitigate th
 I also think it would be nice to be able to have the same functionality for asset files so that I won't have to wade through
 a sea of broken script files. Maybe in the future this program will be able to automatically generate headers based on
 implementation files that may be using outdated header files. For now though, the project will do just enough of what I need.
+
+Of course, you COULD just use stdafx.h, but it's nice to automatically track the changes and additions to a project folder
