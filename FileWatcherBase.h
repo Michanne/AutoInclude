@@ -4,10 +4,14 @@
 #define PURE_VIRTUAL        =0
 #define DELETED             =delete
 #define IMPLEMENTED
+#define TEMPLATED
+#define TEMPLATE(x)         template<x>
 
 #define WATCH_FILE_NAME_CHANGE      0x1
 #define WATCH_FILE_CREATE           0x2
-#define WATCH_FILE_REMOVE           0x3
+#define WATCH_FILE_REMOVE           0x4
+#define WATCH_FILE_MODIFIED         0x8
+#define WATCH_FILE_ACCESSED         0x10
 
 #define COLOR_OPTIONS   10
 #define FILE_HANDLE_STATES  5
@@ -92,10 +96,8 @@ struct FileWatcherConfig
 
 struct WatchEventInformation
 {
-    std::string relativeFilename;
-    std::string directoryName;
-    WatchFileOption currentOptions;
-    std::function<void(WatchFileOption)> function;
+    WatchFileOption                                 currentOptions;
+    std::function<void(WatchFileOption)>            function;
 };
 
 #define NULL_HANDLE                 0
@@ -142,22 +144,22 @@ public:
     virtual ~FileWatcherBase(){};
 
     virtual void setWatchedDirectory(std::string)                                   PURE_VIRTUAL;
-
     virtual void watchDirectory()                                                   PURE_VIRTUAL;
 
+    TEMPLATE(typename FUNCTION) void platformCreateThread(FUNCTION)                 TEMPLATED;
     virtual void platformCloseThread()                                              PURE_VIRTUAL;
     virtual void platformPrintColorC(const char*, std::initializer_list<Colors>)    PURE_VIRTUAL;
     virtual void platformPrintColorS(std::string, std::initializer_list<Colors>)    PURE_VIRTUAL;
     virtual std::string platformQueryDirectory()                                    PURE_VIRTUAL;
     virtual bool platformDisplayDirectory(std::string)                              PURE_VIRTUAL;
     virtual FileType platformFileType(std::string)                                  PURE_VIRTUAL;
-    virtual void platformBeginDirectoryWatch()                                      PURE_VIRTUAL;
     virtual void platformCreateDirectory(std::string)                               PURE_VIRTUAL;
 
     virtual void pollWatcherThread()                                                PURE_VIRTUAL;
 
     virtual void platformThreadedWait(unsigned)                                     PURE_VIRTUAL;
 
+    WatchEventHandle addEvent(WatchEventInformation*)                               IMPLEMENTED;
     void removeEvent(WatchEventHandle)                                              IMPLEMENTED;
 
     bool log(const char*, unsigned);

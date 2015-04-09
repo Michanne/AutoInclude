@@ -34,7 +34,6 @@ DWORD WINAPI FileWatcherBaseWindows::watchDirectoryEntryPoint(LPVOID lpParam)
 
 void FileWatcherBaseWindows::platformCloseThread()
 {
-
     M_threadDead = true;
     WaitForSingleObject(m_hWatcherThread, INFINITE);
 }
@@ -46,7 +45,6 @@ void FileWatcherBaseWindows::platformPrintColorS(std::string text, std::initiali
 
 void FileWatcherBaseWindows::platformPrintColorC(const char* text, std::initializer_list<Colors> fwcb)
 {
-
     static HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -73,7 +71,6 @@ std::string FileWatcherBaseWindows::platformQueryDirectory()
 
 bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
 {
-
     char fileName[_MAX_PATH];
 
     //get the wide-character file-path using utf8_to_wstring
@@ -83,7 +80,6 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
     //check if handle is ok
     if(hFile == INVALID_HANDLE_VALUE)
     {
-
         log(FILE_WATCHER_WARN_DIR_FAIL_DISPLAY(directory), _MAX_PATH);
         platformPrintColorS(directory + " could not be displayed properly", FILE_WATCHER_COLOR_DIR_FAIL_DISPLAY);
         std::cout << std::endl;
@@ -94,7 +90,6 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
     {
         do
         {
-
             //convert current filename into narrow character and change color based on FileType
             WideCharToMultiByte(CP_UTF8, 0, fdFileData.cFileName, _MAX_PATH, fileName, _MAX_PATH, NULL, NULL);
 
@@ -121,57 +116,8 @@ bool FileWatcherBaseWindows::platformDisplayDirectory(std::string directory)
     return true;
 }
 
-void FileWatcherBaseWindows::platformBeginDirectoryWatch()
-{
-    /*
-    //Create security attributes object to suspend and resume thread
-    SECURITY_ATTRIBUTES saAttribute;
-    PSECURITY_DESCRIPTOR pSDescriptor = NULL;
-
-    pSDescriptor = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR,
-                                                  SECURITY_DESCRIPTOR_MIN_LENGTH);
-
-    if(pSDescriptor == NULL)
-    {
-        log("Unable to initialize thread. Security Descriptor returned NULL", 50);
-        ExitProcess(EXIT_FAILURE);
-    }
-
-    if(!InitializeSecurityDescriptor(pSDescriptor, SECURITY_DESCRIPTOR_REVISION))
-    {
-        log("Unable to initialize thread. Security Descriptor not intialized", 50);
-        ExitProcess(EXIT_FAILURE);
-    }
-
-    if(!IsValidSecurityDescriptor(pSDescriptor))
-    {
-        log("Unable to intialize thread. Security Descriptor not initialized properly", 60);
-        ExitProcess(EXIT_FAILURE);
-    }
-    */
-
-    //spawn worker thread
-    m_hWatcherThread = CreateThread(
-                                  NULL,
-                                  0,
-                                  watchDirectoryEntryPoint,
-                                  this,
-                                  0,
-                                  &m_dwThreadId);
-
-    //check if worker thread spawn successfully
-    if(m_hWatcherThread == NULL)
-    {
-
-        //create log file and log the error, close program
-        log(FILE_WATCHER_ERROR_THREAD_FAIL_SPAWN, 100);
-        ExitProcess(EXIT_FAILURE);
-    }
-}
-
 FileType FileWatcherBaseWindows::platformFileType(std::string filename)
 {
-
     if(FileExtensions.find(wstring_to_utf8(PathFindExtension(
                      utf8_to_wstring(filename).c_str()
                                              ))) != FileExtensions.end())
@@ -191,81 +137,28 @@ I'll fix this function once I understand all these nuances. For now, this is inc
 **/
 void FileWatcherBaseWindows::watchDirectory()
 {
-
     platformPrintColorS("Currently watching '" + M_config.currentlyWatchedDirectory + "'...", FILE_WATCHER_COLOR_DIR_WATCH);
 
-    static unsigned attempts = 0;
+    m_hDirectoryStatus = CreateFile(
+        m_config.currentlyWatchedDirectory.c_str(),
+        FILE_LIST_DIRECTORY,
+        FILE_SHARE_READ
+         | FILE_SHARE_WRITE
+         | FILE_SHARE_DELETE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED
+        );
 
-    if(M_hDirectoryStatus == INVALID_HANDLE_VALUE)
+    if(m_hDirectoryStatus == INVALID_HANDLE_VALUE)
     {
-        log(FILE_WATCHER_ERROR_WATCHPOINT_FAIL_SPAWN(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
+        log(FILE_WATCHER_ERROR_WATCHPOINT_FAIL_SPAWN(m_config.currentlyWatchedDirectory), 40);
         ExitProcess(EXIT_FAILURE);
     }
 
     do
     {
-        //query a change in the current directory
-        M_hDirectoryStatus = FindFirstChangeNotification(
-                                    utf8_to_wstring(M_config.currentlyWatchedDirectory).c_str(),
-                                    true,
-                                    FILE_NOTIFY_CHANGE_FILE_NAME
-                                    );
 
-        //if a change has been found, set the active boolean and dump the information to a FindData struct
-        DWORD dwStatus = WaitForSingleObject(M_hDirectoryStatus, INFINITE);
-
-        FILE_NOTIFY_INFORMATION fniInfo;
-
-        switch(dwStatus)
-        {
-
-        case WAIT_OBJECT_0:
-            //A file has been modified, we take appropriate measures
-            if(ReadDirectoryChangesW(
-                                     M_hDirectoryStatus,
-                                     (LPVOID)&fniInfo,
-                                     sizeof(fniInfo),
-                                     true,
-                                     FILE_NOTIFY_CHANGE_FILE_NAME |
-                                     FILE_NOTIFY_CHANGE_DIR_NAME  |
-                                     FILE_NOTIFY_CHANGE_CREATION,
-                                     0,
-                                     NULL,
-                                     NULL
-                                     ))
-            {
-                std::cout << "check";
-                std::cout << ": " << wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength) << std::endl;
-                switch(fniInfo.Action)
-                {
-                case FILE_ACTION_ADDED:
-                    handleFileState(FileHandleState::ADDED, wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength));
-                    break;
-                case FILE_ACTION_REMOVED:
-                    handleFileState(FileHandleState::REMOVED, wstring_to_utf8(fniInfo.FileName, fniInfo.FileNameLength));
-                    break;
-                default:
-                    break;
-                }
-            }
-            break;
-        default:
-            log(FILE_WATCHER_ERROR_NOTIFY_INVALID, 20);
-            ExitProcess(EXIT_FAILURE);
-            break;
-        }
-
-        if(!FindNextChangeNotification(M_hDirectoryStatus))
-        {
-            log(FILE_WATCHER_WARN_NOTIFY_UPDATE_FAIL(attempts), 30);
-            ++attempts;
-
-            if(attempts >=3)
-            {
-                log(FILE_WATCHER_ERROR_NOTIFY_FAIL(M_config.currentlyWatchedDirectory), _MAX_PATH + 30);
-                ExitProcess(EXIT_FAILURE);
-            }
-        }
 
     }while(!M_threadDead);
 
@@ -278,7 +171,6 @@ bool FileWatcherBaseWindows::log(std::string text, unsigned bufferSize)
 
 bool FileWatcherBaseWindows::log(const char* text, unsigned bufferSize)
 {
-
     std::ofstream out_file("logfile.txt", std::ofstream::app);
 
     SYSTEMTIME stCurrentDate;
@@ -303,7 +195,6 @@ bool FileWatcherBaseWindows::log(const char* text, unsigned bufferSize)
 
 void FileWatcherBaseWindows::platformCreateDirectory(std::string dirName)
 {
-
     DWORD dwAttrib = GetFileAttributes(utf8_to_wstring(M_config.currentlyWatchedDirectory + "/" + dirName).c_str());
 
     //check if directory exists, if it doesn't, create it

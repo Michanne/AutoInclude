@@ -32,7 +32,7 @@ WatchInstanceHandle FileWatcher::addNewWatchInstance(std::string directory)
     {
 
         WatchInstance* instance = new WatchInstance(directory);
-        instance->platformBeginDirectoryWatch();
+        instance->watchDirectory();
         directoryNames.insert(std::make_pair(k, instance));
     }
     return k;

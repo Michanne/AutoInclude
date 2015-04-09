@@ -36,9 +36,9 @@ private:
 
     HANDLE                      m_hWatcherThread;
     DWORD                       m_dwThreadId;
-    static bool                 M_threadDead;
-    static FileWatcherConfig    M_config;
-    static HANDLE               M_hDirectoryStatus;
+    bool                        m_threadDead;
+    FileWatcherConfig           m_config;
+    HANDLE                      m_hDirectoryStatus;
 
     const char* generateMainHeader();
     const char* generateHeaderFromURL();
@@ -60,7 +60,6 @@ public:
     void platformPrintColorS(std::string, std::initializer_list<Colors>);
     std::string platformQueryDirectory();
     bool platformDisplayDirectory(std::string);
-    void platformBeginDirectoryWatch();
     FileType platformFileType(std::string);
     void platformThreadedWait(unsigned);
     void platformSetCurrentDirectory(std::string);
@@ -73,6 +72,9 @@ public:
 
     static bool log(std::string, unsigned);
     static bool log(const char*, unsigned);
+
+    template <typename FUNCTION>
+    void platformCreateThread(FUNCTION);
 
     //http://stackoverflow.com/questions/15615136/is-codecvt-not-a-std-header
     //provided by: jotrocken
@@ -94,4 +96,5 @@ public:
     }
 };
 
+#include "FileWatcherWindows.tcc"
 #endif // H_FILE_WATCHER_WINDOWS_BASE_H

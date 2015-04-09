@@ -30,6 +30,13 @@ WatchInstanceHandle WatchHandleAllocator::getHandle()
     }
 }
 
+WatchEventHandle FileWatcherBase::addEvent(WatchEventInformation* b)
+{
+    WatchEventHandle k = allocEvent.getHandle();
+    watchDelegates.push_back(b);
+    return k;
+}
+
 void WatchHandleAllocator::remove(WATCH_HANDLE handle)
 {
     usedIndices[handle] = false;

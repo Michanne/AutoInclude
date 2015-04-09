@@ -4,12 +4,10 @@ WatchEventHandle FileWatcher::delegateNewWatchEvent(WatchInstanceHandle handle, 
 {
 
     WatchInstance* thisInstance = directoryNames.at(handle);
-    WatchEventHandle a = thisInstance->allocEvent.getHandle();
     WatchEventInformation* b = new WatchEventInformation();
 
     b->currentOptions |= option;
     b->function = std::bind(func, option);
 
-    thisInstance->watchDelegates.push_back(b);
-    return a;
+    return thisInstance->addEvent(b);;
 }
